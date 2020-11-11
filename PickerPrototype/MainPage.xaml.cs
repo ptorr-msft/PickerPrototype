@@ -1,5 +1,7 @@
 ﻿using PickerControls;
 
+using System;
+
 using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -40,9 +42,9 @@ namespace PickerPrototype
             picker.SuggestedStartLocation = @"c:\Program Files\Microsoft Office\";
         }
 
-        private void picker_FilePicked(object sender, PickerControls.FilePickedEventArgs e)
+        private async void picker_FilePicked(object sender, PickerControls.FilePickedEventArgs e)
         {
-            (new MessageDialog(e.Path, "You picked...")).ShowAsync();
+            await (new MessageDialog(e.Path, "You picked...")).ShowAsync();
         }
     }
 }

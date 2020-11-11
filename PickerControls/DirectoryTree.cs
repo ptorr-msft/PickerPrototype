@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -19,7 +20,6 @@ namespace PickerControls
         public DirectoryEntry SelectedItem
         {
             get { return GetValue(SelectedItemProperty) as DirectoryEntry; }
-            //            set { SetValue(SelectedItemProperty, value); }
         }
 
         static void OnSelectedItemChangedHandler(DependencyObject source, DependencyPropertyChangedEventArgs args)
@@ -37,6 +37,8 @@ namespace PickerControls
         }
 
         TreeView directoryTree;
+        bool treeLoaded = false;
+        Queue<Action> treeLoadedActions = new Queue<Action>();
 
         protected override void OnApplyTemplate()
         {
@@ -44,14 +46,40 @@ namespace PickerControls
             {
                 directoryTree.Expanding -= DirectoryTree_Expanding;
                 directoryTree.ItemInvoked -= DirectoryTree_ItemInvoked;
+                directoryTree.Loaded -= DirectoryTree_Loaded;
                 directoryTree = null;
             }
+
+            treeLoaded = false;
 
             directoryTree = (TreeView)GetTemplateChild("directoryTree");
             directoryTree.Expanding += DirectoryTree_Expanding;
             directoryTree.ItemInvoked += DirectoryTree_ItemInvoked;
+            directoryTree.Loaded += DirectoryTree_Loaded;
 
-            InitializeTree();
+            RunWhenLoaded(InitializeTree);
+        }
+
+        void RunWhenLoaded(Action a)
+        {
+            if (treeLoaded)
+            {
+                a();
+            }
+            else
+            {
+                treeLoadedActions.Enqueue(a);
+            }
+        }
+
+        private void DirectoryTree_Loaded(object sender, RoutedEventArgs e)
+        {
+            treeLoaded = true;
+            directoryTree.Loaded -= DirectoryTree_Loaded;
+            while (treeLoadedActions.Count > 0)
+            {
+                treeLoadedActions.Dequeue()();
+            }
         }
 
         public IReadOnlyList<DirectoryEntry> RootEntries { get; } = new List<DirectoryEntry>();
@@ -65,25 +93,19 @@ namespace PickerControls
                 node.HasUnrealizedChildren = true;
                 directoryTree.RootNodes.Add(node);
             }
-
-            if (goToDirectory != null)
-            {
-                GoToDirectory(goToDirectory);
-            }
         }
 
         public void AddRootEntry(DirectoryEntry entry)
         {
             (RootEntries as List<DirectoryEntry>).Add(entry);
 
-            // Already initialized; need to add manually
-            if (directoryTree != null)
+            RunWhenLoaded(() =>
             {
                 var node = new TreeViewNode();
                 node.Content = entry;
                 node.HasUnrealizedChildren = true;
                 directoryTree.RootNodes.Add(node);
-            }
+            });
         }
 
         private void DirectoryTree_ItemInvoked(TreeView sender, TreeViewItemInvokedEventArgs args)
@@ -121,57 +143,57 @@ namespace PickerControls
             }
         }
 
-        string goToDirectory;
         public void GoToDirectory(string path)
         {
-            if (directoryTree == null)
+            RunWhenLoaded(() =>
             {
-                goToDirectory = path;
-                return;
-            }
+                TreeViewNode node = null;
+                TreeViewNode lastNode = null;
 
-            TreeViewNode node = null;
-            TreeViewNode lastNode = null;
-
-            foreach (var rootNode in directoryTree.RootNodes)
-            {
-                var rootEntry = rootNode.Content as DirectoryEntry;
-                if (rootEntry.IsAncestorOf(path))
+                foreach (var rootNode in directoryTree.RootNodes)
                 {
-                    node = rootNode;
-                    break;
-                }
-            }
-
-            while (node != null)
-            {
-                lastNode = node;
-                PopulateChildren(node);
-                node.IsExpanded = true;
-                bool found = false;
-                foreach (var child in node.Children)
-                {
-                    var childEntry = child.Content as DirectoryEntry;
-                    if (childEntry.IsAncestorOf(path))
+                    var rootEntry = rootNode.Content as DirectoryEntry;
+                    if (rootEntry.IsAncestorOf(path))
                     {
-                        node = child;
-                        found = true;
+                        node = rootNode;
                         break;
                     }
                 }
-                if (!found)
-                {
-                    break;
-                }
-            }
 
-            if (lastNode != null)
-            {
-                directoryTree.SelectedNodes.Clear();
-                directoryTree.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal,
-                    () => directoryTree.SelectedNodes.Add(lastNode));
-                SetValue(SelectedItemProperty, lastNode.Content);
-            }
+                while (node != null)
+                {
+                    lastNode = node;
+                    PopulateChildren(node);
+                    node.IsExpanded = true;
+                    bool found = false;
+                    foreach (var child in node.Children)
+                    {
+                        var childEntry = child.Content as DirectoryEntry;
+                        if (childEntry.IsAncestorOf(path))
+                        {
+                            node = child;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found)
+                    {
+                        break;
+                    }
+                }
+
+                if (lastNode != null)
+                {
+                    var item = directoryTree.ContainerFromNode(lastNode) as TreeViewItem;
+                    
+                    // Usually this doesn't work... XAML bug / missing feature?
+                    if (item != null)
+                    {
+                        item.IsSelected = true;
+                        item.StartBringIntoView();
+                    }
+                }
+            });
         }
     }
 }
