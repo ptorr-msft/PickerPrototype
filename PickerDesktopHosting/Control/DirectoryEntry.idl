@@ -1,0 +1,21 @@
+import "FileEntry.idl";
+
+namespace Control
+{
+    runtimeclass FileEntry;
+
+    [default_interface]
+    runtimeclass DirectoryEntry : Windows.UI.Xaml.Controls.Control
+    {
+        DirectoryEntry();
+        DirectoryEntry(DirectoryEntry parent, String path, String label);
+        String Path{ get; };
+        String Label{ get; };
+        DirectoryEntry ParentDirectory{ get; };
+        Windows.Foundation.Collections.IVectorView<DirectoryEntry> Directories{ get; };
+        Windows.Foundation.Collections.IVectorView<FileEntry> Files{ get; };
+        Boolean IsAncestorOf(String path);
+
+        static DirectoryEntry Downloads{ get; };
+    }
+}

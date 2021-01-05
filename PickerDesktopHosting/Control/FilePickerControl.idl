@@ -1,0 +1,17 @@
+namespace Control
+{
+    //runtimeclass FilePickedEventArgs;
+
+    //delegate void FilePickedHandler(FilePickedEventArgs e);
+
+    [default_interface]
+    runtimeclass FilePickerControl : Windows.UI.Xaml.Controls.Page
+    {
+        FilePickerControl();
+        Windows.UI.Xaml.UIElement ExtraControls;
+        String SuggestedStartLocation;
+        //event FilePickedHandler FilePicked;
+
+        static Windows.UI.Xaml.DependencyProperty ExtraControlsProperty{ get; };
+    }
+}

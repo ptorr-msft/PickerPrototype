@@ -1,0 +1,15 @@
+import "DirectoryEntry.idl";
+import "FileEntry.idl";
+
+namespace Control
+{
+    runtimeclass DirectoryListing : Windows.UI.Xaml.Controls.Control
+    {
+        DirectoryListing();
+        FileEntry SelectedFile;
+        DirectoryEntry Directory;
+
+        static Windows.UI.Xaml.DependencyProperty DirectoryProperty{ get; };
+        static Windows.UI.Xaml.DependencyProperty SelectedFileProperty{ get; };
+    }
+}
