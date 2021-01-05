@@ -1,0 +1,16 @@
+import "DirectoryEntry.idl";
+
+namespace Control
+{
+    runtimeclass DirectoryEntry;
+
+    runtimeclass FileEntry : Windows.UI.Xaml.Controls.Control
+    {
+        FileEntry();
+        FileEntry(DirectoryEntry parent, String path, String label, Int64 size);
+        String Path{ get; };
+        String Label{ get; };
+        Int64 Size{ get; };
+        DirectoryEntry Parent{ get; };
+    }
+}

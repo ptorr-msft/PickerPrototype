@@ -1,0 +1,15 @@
+import "DirectoryEntry.idl";
+
+namespace Control
+{
+    runtimeclass DirectoryTree : Windows.UI.Xaml.Controls.Control
+    {
+        DirectoryTree();
+        DirectoryEntry SelectedItem{ get; };
+        Windows.Foundation.Collections.IVectorView<DirectoryEntry> RootEntries{ get; };
+        void AddRootEntry(DirectoryEntry directory);
+        void GoToDirectory(String path);
+
+        static Windows.UI.Xaml.DependencyProperty SelectedItemProperty{ get; };
+    }
+}
